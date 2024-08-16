@@ -1,0 +1,8 @@
+D:\codeProject\VisualStudioProject\CheatMenu\bin\Debug\CheatMenu.dll
+D:\codeProject\VisualStudioProject\CheatMenu\bin\Debug\CheatMenu.pdb
+D:\codeProject\VisualStudioProject\CheatMenu\obj\Debug\CheatMenu.csproj.AssemblyReference.cache
+D:\codeProject\VisualStudioProject\CheatMenu\obj\Debug\CheatMenu.csproj.CoreCompileInputs.cache
+D:\codeProject\VisualStudioProject\CheatMenu\obj\Debug\CheatMenu.dll
+D:\codeProject\VisualStudioProject\CheatMenu\obj\Debug\CheatMenu.pdb
+D:\Steam\steamapps\common\TWOKF\BepInEx\plugins\CheatMenu.dll
+D:\Steam\steamapps\common\TWOKF\BepInEx\plugins\CheatMenu.pdb
