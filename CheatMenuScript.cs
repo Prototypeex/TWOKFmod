@@ -19,6 +19,7 @@ namespace CheatMenu
         ConfigEntry<KeyCode> hotkey1;
         public static ConfigEntry<int> configInt;
         ConfigEntry<float> configFloat;
+        ConfigEntry<float> configFloat1;
         ConfigEntry<string> configString;
         public static ConfigEntry<bool> preventItemReduction;
         void Start()
@@ -44,6 +45,9 @@ namespace CheatMenu
                 CharaData charaData = SharedData.Instance(false).GetCharaData(SharedData.Instance(false).playerid);
                 charaData.m_Exp += 500;
                 charaData.m_Talent += 1;
+                //charaData.Indexs_Name["MOR"].alterValue++;//这个只建议修改道德，然后用天赋点来加别的点
+
+
             }
         }
         [HarmonyPrefix,HarmonyPatch(typeof(PackageController), "UseSelectedItemOnField")]
