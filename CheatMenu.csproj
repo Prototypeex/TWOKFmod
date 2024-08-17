@@ -71,6 +71,10 @@
       <HintPath>..\..\..\Steam\steamapps\common\TWOKF\TheWorldOfKongFu_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>..\..\steam\steamapps\common\TWOKF\TheWorldOfKongFu_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
       <HintPath>..\..\..\Steam\steamapps\common\TWOKF\TheWorldOfKongFu_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>False</Private>
