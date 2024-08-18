@@ -22,15 +22,19 @@ namespace CheatMenu
         ConfigEntry<string> configString;
         public static bool preventItemReduction;
         public static int extraExpValue=0;
-
+        public static List<gang_b07Table.Row> b07 { get; private set; }
+        public static List<string> itemNames { get; private set; }
         private Rect windowRect = new Rect(50, 50, 800, 480);
         private string inputString = "0";
+        private string searchText = "";
         private static string input = "0";
+        private Vector2 scrollPosition = Vector2.zero;
         private string teststring;
         private bool testBool = false;
-        private string[] testToolbarNames = new string[] { "属性", "其他" };
+        private string[] testToolbarNames = new string[] { "属性", "物品","其他" };
         private int testToolbarIndex = 0;
         private float testFloat;
+        private List<gang_b07Table.Row> searchResults = new List<gang_b07Table.Row>();
         private Vector2 scrollViewPos;
         private bool windowShow = false;
 
@@ -38,9 +42,10 @@ namespace CheatMenu
         {
             hotkey = Config.Bind<KeyCode>("config","hotkey",KeyCode.Tab,"CheatMenu菜单显示");//默认的快捷键是Y
             hotkey1 = Config.Bind<KeyCode>("config","hotkey1",KeyCode.T,"测试修改功能的快捷键，无需理会");
-            Debug.Log("Prototypehu:Hello World");
-            Logger.LogInfo("BepInEx:Hello World");
+            Logger.LogInfo("CheatMenu初始化中...");
             Harmony.CreateAndPatchAll(typeof(CheatMenu));
+            Logger.LogInfo("CheatMenu初始化成功");
+
         }
 
         void Update()
@@ -59,7 +64,11 @@ namespace CheatMenu
                 charaData.m_Talent += 1;
                 charaData.Indexs_Name["MOR"].alterValue++;//这个只建议修改道德，然后用天赋点来加别的点
                 float Hp = charaData.GetFieldValueByName("HP");//界面显示的数据，是经过计算的，不要动，仅用于显示
-
+                List<gang_b07Table.Row> b07 = CommonResourcesData.b07.GetRowList();
+                foreach (var item in b07)
+                {
+                    Debug.Log($"ID: {item.ID}, Name: {item.Name}, BookIcon: {item.BookIcon}, Style: {item.Style}, Star: {item.Star}, Value: {item.Value}, Use: {item.Use}, Relateid: {item.Relateid}, Skills1: {item.Skills1}, Skills1Ec: {item.Skills1Ec}, Skills2: {item.Skills2}, Skills2Ec: {item.Skills2Ec}, Skills3: {item.Skills3}, Skills3Ec: {item.Skills3Ec}, Skills4: {item.Skills4}, Skills4Ec: {item.Skills4Ec}, Attckstyle: {item.Attckstyle}, Area: {item.Area}, Range: {item.Range}, note: {item.note}, isAtlas: {item.isAtlas}");
+                }
             }
         }
 
@@ -87,7 +96,7 @@ namespace CheatMenu
         {
             GUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("X",GUILayout.Width(22)))//这里结合上面的FlexbleSpace是给按钮布局
+            if (GUILayout.Button("X",GUILayout.Width(20)))//这里结合上面的FlexbleSpace是给按钮布局
             {
                 windowShow = false;
             }
@@ -112,12 +121,20 @@ namespace CheatMenu
                     GUILayout.Label("上面增加的五维属性不会对应增加基础属性如血内攻防等");
                     GUILayout.Label("若要对应基础属性增加，请使用天赋点加点");
                     GUILayout.BeginHorizontal();
-                    GUIPropertyShow("攻击力", "ATK");
-                    GUIPropertyShow("防御力", "DEF");
+                    GUIMultiPropertyShow("攻击力", "ATK");
+                    GUIMultiPropertyShow("防御力", "DEF");
                     GUILayout.EndHorizontal();
                     GUILayout.BeginHorizontal();
                     GUIMultiPropertyShow("血量", "HP");
                     GUIMultiPropertyShow("内力", "MP");
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                    GUIMultiPropertyShow("轻功", "SP");
+                    GUIMultiPropertyShow("暴击率", "Crit");
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                    GUIMultiPropertyShow("暴击伤害", "Crit1");
+                    GUIMultiPropertyShow("连击率", "Combo");
                     GUILayout.EndHorizontal();
                     GUILayout.BeginHorizontal();
                     GUIMultiPropertyShow("剑法", "Sword");
@@ -132,8 +149,8 @@ namespace CheatMenu
                     GUIMultiPropertyShow("特殊", "Special");
                     GUILayout.EndHorizontal();
                     GUILayout.BeginHorizontal();
-                    GUIMultiPropertyShow("奇门", "Finger");
-                    GUIMultiPropertyShow("音律", "Special");
+                    GUIMultiPropertyShow("奇门", "YinYang");
+                    GUIMultiPropertyShow("音律", "Melody");
                     GUILayout.EndHorizontal();
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("这里获取锻造的字段失败导致无法修改锻造");
@@ -146,6 +163,43 @@ namespace CheatMenu
                     GUILayout.EndHorizontal();
                     break;
                 case 1:
+                    if(GUILayout.Button("先点击这个来初始化物品列表，然后才能搜索"))
+                    {
+                        GUILayout.Label("物品列表初始化中...");
+                        //实例化物品列表并给出所有物品
+                        b07 = CommonResourcesData.b07.GetRowList();
+                        itemNames = new List<string>();
+
+                        foreach (var item in b07)
+                        {
+                            itemNames.Add(item.Name);
+                        }
+                        Logger.LogInfo("CheatMenu初始化完成");
+                        GUILayout.Label("物品列表初始化成功");
+                    }
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("物品名:");
+
+                    searchText = GUILayout.TextField(searchText);
+                    if (GUILayout.Button("搜索"))
+                    {
+                        SearchItems(searchText);
+                    }
+                    GUILayout.EndHorizontal();
+
+                    // 显示搜索结果
+                    scrollPosition = GUILayout.BeginScrollView(scrollPosition, GUILayout.Width(300), GUILayout.Height(400));
+                    foreach (var item in searchResults)
+                    {
+                        if (GUILayout.Button(item.Name))
+                        {
+                            SharedData.Instance(false).PackageAdd(item.ID, 1);
+                            Debug.Log($"添加 {item.Name} 到背包中");
+                        }
+                    }
+                    GUILayout.EndScrollView();
+                    break;
+                case 2:
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("修改天赋点：");
                     GUILayout.Space(10);
@@ -276,6 +330,32 @@ namespace CheatMenu
             //GUILayout.EndScrollView();
 
         }
+
+        private void SearchItems(string searchText)
+        {
+            // 清空之前的搜索结果
+            searchResults.Clear();
+
+            if (b07 == null || b07.Count == 0)
+            {
+                GUILayout.Label("物品列表未初始化或为空");
+                return;
+            }
+
+            foreach (var item in b07)
+            {
+                if (item.Name.Contains(searchText))
+                {
+                    searchResults.Add(item);
+                }
+            }
+
+            if (searchResults.Count == 0)
+            {
+                GUILayout.Label("没有匹配到任何物品");
+            }
+        }
+
         /// <summary>
         /// 单个六维值显示
         /// </summary>
