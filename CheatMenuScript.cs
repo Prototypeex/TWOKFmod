@@ -17,13 +17,15 @@ namespace CheatMenu
     {
         ConfigEntry<KeyCode> hotkey;//这个定义+下面的Config.Bind就可以在启动后生成配置文件，进而在配置中手动修改快捷键
         ConfigEntry<KeyCode> hotkey1;
-        public static ConfigEntry<int> configInt;
         ConfigEntry<float> configFloat;
         ConfigEntry<float> configFloat1;
         ConfigEntry<string> configString;
-        public static ConfigEntry<bool> preventItemReduction;
+        public static bool preventItemReduction;
+        public static int extraExpValue=0;
 
-        private Rect windowRect = new Rect(50, 50, 500, 300);
+        private Rect windowRect = new Rect(50, 50, 800, 480);
+        private string inputString = "0";
+        private static string input = "0";
         private string teststring;
         private bool testBool = false;
         private string[] testToolbarNames = new string[] { "属性", "其他" };
@@ -34,10 +36,8 @@ namespace CheatMenu
 
         void Start()
         {
-            hotkey = Config.Bind<KeyCode>("config","hotkey",KeyCode.Y,"增加1000钱");//默认的快捷键是Y
-            hotkey1 = Config.Bind<KeyCode>("config","hotkey1",KeyCode.T,"增加500经验");//默认的快捷键是T
-            configInt = Config.Bind<int>("config","skillexpamount",20,"武功额外熟练度,0-100");//默认额外+1
-            preventItemReduction = Config.Bind<bool>("config","isItemReductionInField",true,"true为不减，false为默认减少");
+            hotkey = Config.Bind<KeyCode>("config","hotkey",KeyCode.Tab,"CheatMenu菜单显示");//默认的快捷键是Y
+            hotkey1 = Config.Bind<KeyCode>("config","hotkey1",KeyCode.T,"测试修改功能的快捷键，无需理会");
             Debug.Log("Prototypehu:Hello World");
             Logger.LogInfo("BepInEx:Hello World");
             Harmony.CreateAndPatchAll(typeof(CheatMenu));
@@ -65,12 +65,24 @@ namespace CheatMenu
 
         private void OnGUI()
         {
-            if(windowShow)//约束mod菜单的渲染
+            // 修改全局样式
+            GUI.skin.label.fontSize = 20;
+            GUI.skin.button.fontSize = 20;
+            GUI.skin.textField.fontSize = 20;
+            GUI.skin.toggle.fontSize = 20;
+
+            // 修改窗口标题的字体大小
+            GUI.skin.window.fontSize = 20;
+
+            if (windowShow)
             {
-                windowRect = GUILayout.Window(1, windowRect, WindowFunc, "菜单");
+                windowRect = GUILayout.Window(1, windowRect, WindowFunc, "CheatMenu");
             }
         }
-
+        /// <summary>
+        /// 菜单内的显示内容
+        /// </summary>
+        /// <param name="id"></param>
         public void WindowFunc(int id)
         {
             GUILayout.BeginHorizontal();
@@ -82,30 +94,248 @@ namespace CheatMenu
             GUILayout.EndHorizontal();
 
             testToolbarIndex = GUILayout.Toolbar(testToolbarIndex, testToolbarNames);
-            testFloat = GUILayout.HorizontalSlider(testFloat, 0, 10);
-            //GUILayout.Label(testToolbarIndex.ToString());
-            GUILayout.Label("Hello World");
-            if(GUILayout.Button("增加"))
+            switch (testToolbarIndex)
             {
-                Debug.Log("点击按钮");
+                case 0:
+                    GUILayout.BeginHorizontal();
+                    GUIPropertyShow("臂力", "STR");
+                    GUIPropertyShow("定力", "WIL");
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                    GUIPropertyShow("敏捷", "AGI");
+                    GUIPropertyShow("悟性", "LER");
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                    GUIPropertyShow("根骨", "BON");
+                    GUIPropertyShow("道德", "MOR");
+                    GUILayout.EndHorizontal();
+                    GUILayout.Label("上面增加的五维属性不会对应增加基础属性如血内攻防等");
+                    GUILayout.Label("若要对应基础属性增加，请使用天赋点加点");
+                    GUILayout.BeginHorizontal();
+                    GUIPropertyShow("攻击力", "ATK");
+                    GUIPropertyShow("防御力", "DEF");
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                    GUIMultiPropertyShow("血量", "HP");
+                    GUIMultiPropertyShow("内力", "MP");
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                    GUIMultiPropertyShow("剑法", "Sword");
+                    GUIMultiPropertyShow("刀法", "Knife");
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                    GUIMultiPropertyShow("棍杖", "Stick");
+                    GUIMultiPropertyShow("拳掌", "Hand");
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                    GUIMultiPropertyShow("指力", "Finger");
+                    GUIMultiPropertyShow("特殊", "Special");
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                    GUIMultiPropertyShow("奇门", "Finger");
+                    GUIMultiPropertyShow("音律", "Special");
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("这里获取锻造的字段失败导致无法修改锻造");
+                    //GUIMultiPropertyShow("锻造", "Making");
+                    GUIMultiPropertyShow("酒艺", "Wineart");
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                    GUIMultiPropertyShow("暗器", "Darts");
+                    GUIMultiPropertyShow("盗术", "Steal");
+                    GUILayout.EndHorizontal();
+                    break;
+                case 1:
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("修改天赋点：");
+                    GUILayout.Space(10);
+
+                    CharaData charaData = SharedData.Instance(false).GetCharaData(SharedData.Instance(false).playerid);
+                    if (GUILayout.Button("+1"))
+                    {
+                        charaData.m_Talent++;
+                    }
+                    GUILayout.Space(10);
+
+                    if (GUILayout.Button("-1"))
+                    {
+                        charaData.m_Talent--;
+                    }
+                    GUILayout.EndHorizontal();
+
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("修改金钱：");
+                    inputString = GUILayout.TextField(inputString);
+
+                    GUILayout.Space(10);
+                    if (GUILayout.Button("+"))
+                    {
+                        int inputValue;
+                        if (int.TryParse(inputString, out inputValue))
+                        {
+                            SharedData.Instance(false).m_Money += inputValue;
+                        }
+                        else
+                        {
+                            Debug.LogWarning("输入无效，请输入一个有效的数字。");
+                        }
+                    }
+                    if (GUILayout.Button("-"))
+                    {
+                        int inputValue;
+                        if (int.TryParse(inputString, out inputValue))
+                        {
+                            SharedData.Instance(false).m_Money -= inputValue;
+                        }
+                        else
+                        {
+                            Debug.LogWarning("输入无效，请输入一个有效的数字。");
+                        }
+                    }
+                    GUILayout.Space(10);
+
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("修改经验：");
+                    inputString = GUILayout.TextField(inputString);
+
+                    GUILayout.Space(10);
+                    if (GUILayout.Button("+"))
+                    {
+                        int inputValue;
+                        if (int.TryParse(inputString, out inputValue))
+                        {
+                            charaData.m_Exp += inputValue;
+                        }
+                        else
+                        {
+                            Debug.LogWarning("输入无效，请输入一个有效的数字。");
+                        }
+                    }
+                    if (GUILayout.Button("-"))
+                    {
+                        int inputValue;
+                        if (int.TryParse(inputString, out inputValue))
+                        {
+                            charaData.m_Exp -= inputValue;
+                        }
+                        else
+                        {
+                            Debug.LogWarning("输入无效，请输入一个有效的数字。");
+                        }
+                    }
+                    GUILayout.Space(10);
+
+                    GUILayout.EndHorizontal();
+
+                    preventItemReduction = GUILayout.Toggle(preventItemReduction,"在场景中打开背包使用物品，则物品不减少");
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("战斗中出招获得额外武功熟练度点数：");
+                    input = GUILayout.TextField(input);
+                    if(GUILayout.Button("应用"))
+                    {
+                        int inputValue;
+                        if(int.TryParse(input,out inputValue))
+                        {
+                            extraExpValue = inputValue;
+                        }
+                        else
+                        {
+                            GUILayout.Label("输入无效，请输入一个有效的数字。");
+                            input = "0";
+                        }
+                    }
+                    GUILayout.EndHorizontal();
+
+                    break;
+                default:
+                    break;
             }
-
-            scrollViewPos = GUILayout.BeginScrollView(scrollViewPos);
-            GUILayout.Label("输入文本");
-            teststring = GUILayout.TextField(teststring);
-            testBool = GUILayout.Toggle(testBool, "某开关");
-            GUILayout.Label("输入文本");
-            GUILayout.Label("输入文本");
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("输入文本");
-            GUILayout.Label("输入文本");
-            GUILayout.Label("输入文本");
-            GUILayout.EndHorizontal();
-
-            GUILayout.EndScrollView();
-
             GUI.DragWindow();
 
+            //testFloat = GUILayout.HorizontalSlider(testFloat, 0, 10);//水平滑动条
+            //GUILayout.Label(testToolbarIndex.ToString());//显示ToolBar索引
+            //GUILayout.Label("Hello World");
+            //if(GUILayout.Button("增加"))
+            //{
+            //    Debug.Log("点击按钮");
+            //}
+
+            //scrollViewPos = GUILayout.BeginScrollView(scrollViewPos);
+            //GUILayout.Label("输入文本");
+            //teststring = GUILayout.TextField(teststring);
+            //testBool = GUILayout.Toggle(testBool, "某开关");
+            //GUILayout.Label("输入文本");
+            //GUILayout.Label("输入文本");
+            //GUILayout.BeginHorizontal();
+            //GUILayout.Label("输入文本");
+            //GUILayout.Label("输入文本");
+            //GUILayout.Label("输入文本");
+            //GUILayout.EndHorizontal();
+
+            //GUILayout.EndScrollView();
+
+        }
+        /// <summary>
+        /// 单个六维值显示
+        /// </summary>
+        /// <param name="name">属性值描述</param>
+        /// <param name="field">属性值字段</param>
+        public void GUIPropertyShow(string name,string field)
+        {
+            GUILayout.Label(name);
+            CharaData charaData = SharedData.Instance(false).GetCharaData(SharedData.Instance(false).playerid);
+            GUILayout.Space(10);
+            GUILayout.Label(charaData.GetFieldValueByName(field).ToString());
+            GUILayout.Space(10);
+            if (GUILayout.Button("+1"))
+            {
+                charaData.Indexs_Name[field].alterValue++;
+            }
+            GUILayout.Space(10);
+            if (GUILayout.Button("-1"))
+            {
+                charaData.Indexs_Name[field].alterValue--;
+            }
+            GUILayout.Space(20);
+        }
+        public void GUIMultiPropertyShow(string name, string field)
+        {
+            GUILayout.Label(name);
+            CharaData charaData = SharedData.Instance(false).GetCharaData(SharedData.Instance(false).playerid);
+            GUILayout.Space(10);
+            GUILayout.Label(charaData.GetFieldValueByName(field).ToString());
+            GUILayout.Space(10);
+
+            inputString = GUILayout.TextField(inputString);
+
+            GUILayout.Space(10);
+            if (GUILayout.Button("+"))
+            {
+                float inputValue;
+                if (float.TryParse(inputString, out inputValue))
+                {
+                    charaData.Indexs_Name[field].alterValue += inputValue;
+                }
+                else
+                {
+                    Debug.LogWarning("输入无效，请输入一个有效的数字。");
+                }
+            }
+
+            GUILayout.Space(10);
+            if (GUILayout.Button("-"))
+            {
+                float inputValue;
+                if (float.TryParse(inputString, out inputValue))
+                {
+                    charaData.Indexs_Name[field].alterValue -= inputValue;
+                }
+                else
+                {
+                    Debug.LogWarning("输入无效，请输入一个有效的数字。");
+                }
+            }
         }
         [HarmonyPrefix,HarmonyPatch(typeof(PackageController), "UseSelectedItemOnField")]
         //[HarmonyPatch(new Type[] { typeof(int).MakeByRefType(), typeof(string).MakeByRefType() })]这种方法针对字段有ref关键字的情况，即无法直接用Traverse来获取字段/方法
@@ -126,7 +356,7 @@ namespace CheatMenu
                 gang_b07Table.Row b07row = selectedItem.b07Row;
 
                 // 检查配置项，如果为 true，则在减少物品之前增加物品数量
-                if (preventItemReduction.Value)
+                if (preventItemReduction)
                 {
                     SharedData.Instance(false).PackageAdd(b07row.ID, 1);
                 }
@@ -139,7 +369,7 @@ namespace CheatMenu
         [HarmonyPostfix, HarmonyPatch(typeof(BattleObject), "PlayEffectAll")]
         public static void BattleObject_PlayEffectAll_Patch(BattleObject __instance)
         {
-            int extraexp = CheatMenu.configInt.Value;
+            int extraexp = CheatMenu.extraExpValue;
             if("player".Equals(__instance.race))
             {
                 Debug.Log("成功增加额外经验");
