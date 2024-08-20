@@ -40,7 +40,7 @@ namespace CheatMenu
 
         void Start()
         {
-            hotkey = Config.Bind<KeyCode>("config","hotkey",KeyCode.Tab,"CheatMenu菜单显示");//默认的快捷键是Y
+            hotkey = Config.Bind<KeyCode>("config","hotkey",KeyCode.Tab,"CheatMenu菜单显示");//默认的快捷键是Tab
             hotkey1 = Config.Bind<KeyCode>("config","hotkey1",KeyCode.T,"测试修改功能的快捷键，无需理会");
             Logger.LogInfo("CheatMenu初始化中...");
             Harmony.CreateAndPatchAll(typeof(CheatMenu));
@@ -65,9 +65,10 @@ namespace CheatMenu
                 charaData.Indexs_Name["MOR"].alterValue++;//这个只建议修改道德，然后用天赋点来加别的点
                 float Hp = charaData.GetFieldValueByName("HP");//界面显示的数据，是经过计算的，不要动，仅用于显示
                 List<gang_b07Table.Row> b07 = CommonResourcesData.b07.GetRowList();
-                foreach (var item in b07)
+                foreach(var kongfu in charaData.m_KongFuList)
                 {
-                    Debug.Log($"ID: {item.ID}, Name: {item.Name}, BookIcon: {item.BookIcon}, Style: {item.Style}, Star: {item.Star}, Value: {item.Value}, Use: {item.Use}, Relateid: {item.Relateid}, Skills1: {item.Skills1}, Skills1Ec: {item.Skills1Ec}, Skills2: {item.Skills2}, Skills2Ec: {item.Skills2Ec}, Skills3: {item.Skills3}, Skills3Ec: {item.Skills3Ec}, Skills4: {item.Skills4}, Skills4Ec: {item.Skills4Ec}, Attckstyle: {item.Attckstyle}, Area: {item.Area}, Range: {item.Range}, note: {item.note}, isAtlas: {item.isAtlas}");
+                    Debug.Log(kongfu.kf.Name);
+                    Debug.Log(kongfu.kf.ID);
                 }
             }
         }
@@ -89,7 +90,7 @@ namespace CheatMenu
             }
         }
         /// <summary>
-        /// 菜单内的显示内容
+        /// 菜单内的显示内容，所有的修改内容均在这里展示
         /// </summary>
         /// <param name="id"></param>
         public void WindowFunc(int id)
@@ -200,11 +201,12 @@ namespace CheatMenu
                     GUILayout.EndScrollView();
                     break;
                 case 2:
+                    CharaData charaData = SharedData.Instance(false).GetCharaData(SharedData.Instance(false).playerid);
+
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("修改天赋点：");
                     GUILayout.Space(10);
 
-                    CharaData charaData = SharedData.Instance(false).GetCharaData(SharedData.Instance(false).playerid);
                     if (GUILayout.Button("+1"))
                     {
                         charaData.m_Talent++;
@@ -300,7 +302,18 @@ namespace CheatMenu
                         }
                     }
                     GUILayout.EndHorizontal();
-
+                    GUILayout.Label("武功列表,遗忘武功无法消除增加的属性");
+                    var kongfuListCopy = charaData.m_KongFuList.ToList(); // 创建集合的副本
+                    foreach (var kongfu in kongfuListCopy)
+                    {
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Label(kongfu.kf.Name);
+                        if (GUILayout.Button("遗忘"))
+                        {
+                            charaData.KongFuListRemove(kongfu); // 现在可以安全地删除元素
+                        }
+                        GUILayout.EndHorizontal();
+                    }
                     break;
                 default:
                     break;
@@ -330,6 +343,7 @@ namespace CheatMenu
             //GUILayout.EndScrollView();
 
         }
+
 
         private void SearchItems(string searchText)
         {
