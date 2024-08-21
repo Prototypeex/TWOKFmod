@@ -22,8 +22,10 @@ namespace CheatMenu
         ConfigEntry<string> configString;
         public static bool preventItemReduction;
         public static int extraExpValue=0;
-        public static List<gang_b07Table.Row> b07 { get; private set; }
+        public static List<gang_b07Table.Row> b07 { get; private set; }//物品表
+        public static List<gang_b06Table.Row> b06 { get; private set; }//特征表
         public static List<string> itemNames { get; private set; }
+        public static List<string> traitNames { get; private set; }
         private Rect windowRect = new Rect(50, 50, 800, 480);
         private string inputString = "0";
         private string searchText = "";
@@ -31,10 +33,11 @@ namespace CheatMenu
         private Vector2 scrollPosition = Vector2.zero;
         private string teststring;
         private bool testBool = false;
-        private string[] testToolbarNames = new string[] { "属性", "物品","其他" };
+        private string[] testToolbarNames = new string[] { "属性", "物品","特征","其他" };
         private int testToolbarIndex = 0;
         private float testFloat;
         private List<gang_b07Table.Row> searchResults = new List<gang_b07Table.Row>();
+        private List<gang_b06Table.Row> searchResults1 = new List<gang_b06Table.Row>();
         private Vector2 scrollViewPos;
         private bool windowShow = false;
 
@@ -104,6 +107,7 @@ namespace CheatMenu
             GUILayout.EndHorizontal();
 
             testToolbarIndex = GUILayout.Toolbar(testToolbarIndex, testToolbarNames);
+            CharaData charaData = SharedData.Instance(false).GetCharaData(SharedData.Instance(false).playerid);
             switch (testToolbarIndex)
             {
                 case 0:
@@ -166,7 +170,7 @@ namespace CheatMenu
                 case 1:
                     if(GUILayout.Button("先点击这个来初始化物品列表，然后才能搜索"))
                     {
-                        GUILayout.Label("物品列表初始化中...");
+                        Logger.LogInfo("物品列表初始化中...");
                         //实例化物品列表并给出所有物品
                         b07 = CommonResourcesData.b07.GetRowList();
                         itemNames = new List<string>();
@@ -175,8 +179,7 @@ namespace CheatMenu
                         {
                             itemNames.Add(item.Name);
                         }
-                        Logger.LogInfo("CheatMenu初始化完成");
-                        GUILayout.Label("物品列表初始化成功");
+                        Logger.LogInfo("物品列表初始化成功");
                     }
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("物品名:");
@@ -201,7 +204,40 @@ namespace CheatMenu
                     GUILayout.EndScrollView();
                     break;
                 case 2:
-                    CharaData charaData = SharedData.Instance(false).GetCharaData(SharedData.Instance(false).playerid);
+
+                    if (GUILayout.Button("点击这个来初始化特征列表，然后才能搜索"))
+                    {
+                        Logger.LogInfo("特征列表初始化中...");
+                        b06 = CommonResourcesData.b06.GetRowList();
+                        traitNames = new List<string>();
+                        foreach(var item in b06)
+                        {
+                            traitNames.Add(item.name);
+                        }
+                        Logger.LogInfo("特征列表初始化完成");
+                    }
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("特征名:");
+                    searchText = GUILayout.TextField(searchText);
+                    if (GUILayout.Button("搜索"))
+                    {
+                        SearchTraits(searchText);
+                    }
+                    GUILayout.EndHorizontal();
+
+                    //显示搜索结果
+                    scrollPosition = GUILayout.BeginScrollView(scrollPosition, GUILayout.Width(300), GUILayout.Height(400));
+                    foreach(var item in searchResults1)
+                    {
+                        if(GUILayout.Button(item.name))
+                        {
+                            charaData.AddTraits(item.id);
+                            Debug.Log($"添加 {item.name} 特征");
+                        }
+                    }
+                    GUILayout.EndScrollView();
+                    break;
+                case 3:
 
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("修改天赋点：");
@@ -303,6 +339,7 @@ namespace CheatMenu
                     }
                     GUILayout.EndHorizontal();
                     GUILayout.Label("武功列表,遗忘武功无法消除增加的属性");
+                    GUILayout.BeginScrollView(scrollPosition, GUILayout.Width(400), GUILayout.Height(400));
                     var kongfuListCopy = charaData.m_KongFuList.ToList(); // 创建集合的副本
                     foreach (var kongfu in kongfuListCopy)
                     {
@@ -314,6 +351,7 @@ namespace CheatMenu
                         }
                         GUILayout.EndHorizontal();
                     }
+                    GUILayout.EndScrollView();
                     break;
                 default:
                     break;
@@ -344,7 +382,10 @@ namespace CheatMenu
 
         }
 
-
+        /// <summary>
+        /// 查找物品
+        /// </summary>
+        /// <param name="searchText">物品名称</param>
         private void SearchItems(string searchText)
         {
             // 清空之前的搜索结果
@@ -365,6 +406,34 @@ namespace CheatMenu
             }
 
             if (searchResults.Count == 0)
+            {
+                GUILayout.Label("没有匹配到任何物品");
+            }
+        }
+        /// <summary>
+        /// 搜索特征
+        /// </summary>
+        /// <param name="searchText"></param>
+        private void SearchTraits(string searchText)
+        {
+            // 清空之前的搜索结果
+            searchResults1.Clear();
+
+            if (b06 == null || b06.Count == 0)
+            {
+                GUILayout.Label("物品列表未初始化或为空");
+                return;
+            }
+
+            foreach (var item in b06)
+            {
+                if (item.name.Contains(searchText))
+                {
+                    searchResults1.Add(item);
+                }
+            }
+
+            if (searchResults1.Count == 0)
             {
                 GUILayout.Label("没有匹配到任何物品");
             }
