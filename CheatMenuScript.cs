@@ -62,7 +62,7 @@ namespace CheatMenu
                 SharedData.Instance(false).m_Money += 1000;//改钱，是队伍数据         
 
                 //获取玩家的数据
-                CharaData charaData = SharedData.Instance(false).GetCharaData(SharedData.Instance(false).playerid);
+                CharaData charaData = SharedData.Instance(false).CurrentCharaData;
                 charaData.m_Exp += 500;
                 charaData.m_Talent += 1;
                 charaData.Indexs_Name["MOR"].alterValue++;//这个只建议修改道德，然后用天赋点来加别的点
@@ -107,7 +107,11 @@ namespace CheatMenu
             GUILayout.EndHorizontal();
 
             testToolbarIndex = GUILayout.Toolbar(testToolbarIndex, testToolbarNames);
-            CharaData charaData = SharedData.Instance(false).GetCharaData(SharedData.Instance(false).playerid);
+            if(SharedData.Instance(false).CurrentCharaData==null)
+            {
+                SharedData.Instance(false).CurrentCharaData = SharedData.Instance(false).GetCharaData(SharedData.Instance(false).playerid);
+            }
+            CharaData charaData = SharedData.Instance(false).CurrentCharaData;
             switch (testToolbarIndex)
             {
                 case 0:
@@ -447,7 +451,7 @@ namespace CheatMenu
         public void GUIPropertyShow(string name,string field)
         {
             GUILayout.Label(name);
-            CharaData charaData = SharedData.Instance(false).GetCharaData(SharedData.Instance(false).playerid);
+            CharaData charaData = SharedData.Instance(false).CurrentCharaData;
             GUILayout.Space(10);
             GUILayout.Label(charaData.GetFieldValueByName(field).ToString());
             GUILayout.Space(10);
@@ -465,7 +469,7 @@ namespace CheatMenu
         public void GUIMultiPropertyShow(string name, string field)
         {
             GUILayout.Label(name);
-            CharaData charaData = SharedData.Instance(false).GetCharaData(SharedData.Instance(false).playerid);
+            CharaData charaData = SharedData.Instance(false).CurrentCharaData;
             GUILayout.Space(10);
             GUILayout.Label(charaData.GetFieldValueByName(field).ToString());
             GUILayout.Space(10);
