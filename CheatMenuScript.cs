@@ -40,13 +40,14 @@ namespace CheatMenu
         private List<gang_b06Table.Row> searchResults1 = new List<gang_b06Table.Row>();
         private Vector2 scrollViewPos;
         private bool windowShow = false;
+        private static bool _hasProcessedUseItemID = false;
 
         void Start()
         {
             hotkey = Config.Bind<KeyCode>("config","hotkey",KeyCode.Tab,"CheatMenu菜单显示");//默认的快捷键是Tab
             hotkey1 = Config.Bind<KeyCode>("config","hotkey1",KeyCode.T,"测试修改功能的快捷键，无需理会");
             Logger.LogInfo("CheatMenu初始化中...");
-            Harmony.CreateAndPatchAll(typeof(CheatMenu));
+            Harmony.CreateAndPatchAll(typeof(CheatMenu));//Harmony注入，用于即时性修改游戏内方法调用逻辑
             Logger.LogInfo("CheatMenu初始化成功");
 
         }
@@ -94,6 +95,9 @@ namespace CheatMenu
         }
         /// <summary>
         /// 菜单内的显示内容，所有的修改内容均在这里展示
+        /// GUI显示经验：不能嵌套GUILayout，必须在第一层显示。
+        /// 通过交互来显示的元素，则先定义存储变量的数据结构，在GUI中获取，然后在第一层GUI中获取这些数据并显示
+        /// 其原理是GUI是不断刷新的，所以不能嵌套。但是数据是可以固定的，GUI获取的是当前的数据，而数据更新后GUI跟着更新
         /// </summary>
         /// <param name="id"></param>
         public void WindowFunc(int id)
@@ -324,7 +328,7 @@ namespace CheatMenu
 
                     GUILayout.EndHorizontal();
 
-                    preventItemReduction = GUILayout.Toggle(preventItemReduction,"在场景中打开背包使用物品，则物品不减少");
+                    preventItemReduction = GUILayout.Toggle(preventItemReduction,"在场景/战斗中使用物品，则物品不减少");
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("战斗中出招获得额外武功熟练度点数：");
                     input = GUILayout.TextField(input);
@@ -343,7 +347,7 @@ namespace CheatMenu
                     }
                     GUILayout.EndHorizontal();
                     GUILayout.Label("武功列表,遗忘武功无法消除增加的属性");
-                    GUILayout.BeginScrollView(scrollPosition, GUILayout.Width(400), GUILayout.Height(400));
+                    scrollPosition = GUILayout.BeginScrollView(scrollPosition, GUILayout.Width(400), GUILayout.Height(400));
                     var kongfuListCopy = charaData.m_KongFuList.ToList(); // 创建集合的副本
                     foreach (var kongfu in kongfuListCopy)
                     {
@@ -504,6 +508,10 @@ namespace CheatMenu
                 }
             }
         }
+        /// <summary>
+        /// 在和平场景中使用物品不减少
+        /// </summary>
+        /// <param name="__instance"></param>
         [HarmonyPrefix,HarmonyPatch(typeof(PackageController), "UseSelectedItemOnField")]
         //[HarmonyPatch(new Type[] { typeof(int).MakeByRefType(), typeof(string).MakeByRefType() })]这种方法针对字段有ref关键字的情况，即无法直接用Traverse来获取字段/方法
         //[HarmonyPatch(new ArgumentType[] { ArgumentType.Ref(typeof(int)), ArgumentType.Out(typeof(string)) })]专门匹配函数参数有ref关键字的情况，关键是在ref、out等修饰符位置放Ref、Out
@@ -533,6 +541,10 @@ namespace CheatMenu
                 Debug.LogError("SelectedPackageItem字段无法获取");
             }
         }
+        /// <summary>
+        /// 出招增加额外经验
+        /// </summary>
+        /// <param name="__instance"></param>
         [HarmonyPostfix, HarmonyPatch(typeof(BattleObject), "PlayEffectAll")]
         public static void BattleObject_PlayEffectAll_Patch(BattleObject __instance)
         {
@@ -545,6 +557,34 @@ namespace CheatMenu
             else
             {
                 //Debug.LogError("增加经验失败，方法条件错误或攻击者非友方");
+            }
+        }
+        [HarmonyPrefix,HarmonyPatch(typeof(BattleObject), "State_Complete")]
+        public static void BattleObject_State_Complete_Patch(BattleObject __instance)
+        {
+
+            if (__instance == null)
+            {
+                Debug.LogError("BattleObject instance is null in the patch.");
+                return;
+            }
+
+            bool flag7 = "ITEM".Equals(__instance.m_AttackType?[0]);
+            if (flag7)
+            {
+                string useItemID = SharedData.Instance(false)?.useItemID;
+                if (!string.IsNullOrEmpty(useItemID)&&!_hasProcessedUseItemID)
+                {
+                    if(preventItemReduction)
+                    {
+                        SharedData.Instance(false).PackageAdd(useItemID, 1);
+                        _hasProcessedUseItemID = true;
+                    }
+                }
+                else if(string.IsNullOrEmpty(useItemID)&&_hasProcessedUseItemID)
+                {
+                    _hasProcessedUseItemID = false;
+                }
             }
         }
     }
