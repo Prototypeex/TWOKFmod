@@ -166,8 +166,7 @@ namespace CheatMenu
                     GUIMultiPropertyShow("音律", "Melody");
                     GUILayout.EndHorizontal();
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label("这里获取锻造的字段失败导致无法修改锻造");
-                    //GUIMultiPropertyShow("锻造", "Making");
+                    GUIMultiPropertyShow("锻造", "Forge");
                     GUIMultiPropertyShow("酒艺", "Wineart");
                     GUILayout.EndHorizontal();
                     GUILayout.BeginHorizontal();
