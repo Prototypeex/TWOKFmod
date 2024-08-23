@@ -564,53 +564,91 @@ namespace CheatMenu
         /// 出招武功满级，注入并用oneHitWugongMax控制是否替换原武功升级检查的方法
         /// </summary>
         /// <param name="__instance"></param>
-        [HarmonyPrefix,HarmonyPatch(typeof(BattleObject), "SkillLevelUpCheckProcess")]
+        [HarmonyPrefix, HarmonyPatch(typeof(BattleObject), "SkillLevelUpCheckProcess")]
         public static bool BattleObject_SkillLevelUpCheckProcess_Patch(BattleObject __instance)
         {
-            if(oneHitWugongMax)
+            // 初始检查
+            UnityEngine.Debug.Log("SkillLevelUpCheckProcess_Patch called");
+
+            if (oneHitWugongMax)
             {
-                int currentlv = __instance.m_SkillRow.lv;
-                string maxlv = __instance.m_SkillRow.kf.LV;
-                float wil = __instance.charadata.GetFieldValueByName("WIL");
-                bool flag = currentlv < int.Parse(maxlv) && (float)currentlv < wil;
-                if (flag)
+                UnityEngine.Debug.Log("oneHitWugongMax is enabled");
+
+                // 初始条件检查
+                bool flag = (__instance.charadata.m_Table != "b01" && !SharedData.Instance(false).FollowList.Contains(__instance.charadata.m_Id)) || __instance.charadata.originRace != "player";
+                UnityEngine.Debug.Log($"Initial flag check: {flag}");
+
+                if (!flag)
                 {
-                    __instance.m_SkillRow.newlv = float.Parse(maxlv) > wil ? (int)wil : int.Parse(maxlv);
-                    __instance.m_SkillRow.CheckAppendTraits(__instance);
-                    bool flag3 = !SharedData.Instance(false).skillLevelupObjList.Contains(__instance);
-                    if (flag3)
+                    // 确保 __instance.m_SkillRow 和 __instance.m_SkillRow.kf 不为空
+                    if (__instance.m_SkillRow == null)
                     {
-                        SharedData.Instance(false).skillLevelupObjList.Add(__instance);
+                        UnityEngine.Debug.Log("m_SkillRow is null");
+                        return true;
                     }
-                    __instance.charadata.m_LevelUpSkillId = __instance.m_SkillRow.kf.ID;
-                    __instance.m_BattleController.ShowLevelUpSkill();
-                    __instance.SetBattleObjState(BattleObjectState.SkillLevelUpNeet);
-                }
-                else
-                {
-                    bool flag4 = __instance.m_FinalAddExp > 0;
-                    if (flag4)
+                    if (__instance.m_SkillRow.kf == null)
                     {
-                        bool flag5 = !"".Equals(__instance.charadata.m_Training_Id);
-                        if (flag5)
+                        UnityEngine.Debug.Log("m_SkillRow.kf is null");
+                        return true;
+                    }
+
+                    int currentlv = __instance.m_SkillRow.lv;
+                    string maxlv = __instance.m_SkillRow.kf.LV;
+                    float wil = __instance.charadata.GetFieldValueByName("WIL");
+
+                    bool flag2 = currentlv < int.Parse(maxlv) && (float)currentlv < wil;
+
+                    if (flag2)
+                    {
+                        __instance.m_SkillRow.newlv = float.Parse(maxlv) > wil ? (int)wil : int.Parse(maxlv);
+                        __instance.m_SkillRow.CheckAppendTraits(__instance);
+                        bool flag3 = !SharedData.Instance(false).skillLevelupObjList.Contains(__instance);
+
+                        if (flag3)
                         {
-                            KongFuData training_kf = __instance.charadata.GetKongFuByID(__instance.charadata.m_Training_Id);
-                            float learn = __instance.charadata.GetFieldValueByName("LER");
-                            bool flag6 = training_kf != null;
-                            if (flag6)
+                            SharedData.Instance(false).skillLevelupObjList.Add(__instance);
+                        }
+
+                        __instance.charadata.m_LevelUpSkillId = __instance.m_SkillRow.kf.ID;
+                        __instance.m_BattleController.ShowLevelUpSkill();
+                        __instance.SetBattleObjState(BattleObjectState.SkillLevelUpNeet);
+                    }
+                    else
+                    {
+                        bool flag4 = __instance.m_FinalAddExp > 0;
+
+                        if (flag4)
+                        {
+                            bool flag5 = !"".Equals(__instance.charadata.m_Training_Id);
+
+                            if (flag5)
                             {
-                                training_kf.newlv = training_kf.lv;
-                                bool flag7 = training_kf.lv < int.Parse(training_kf.kf.LV) && training_kf.CheckLevelUp((float)__instance.m_FinalAddExp, __instance.charadata.GetFieldValueByName("WIL"), learn, __instance);
-                                if (flag7)
+                                KongFuData training_kf = __instance.charadata.GetKongFuByID(__instance.charadata.m_Training_Id);
+                                float learn = __instance.charadata.GetFieldValueByName("LER");
+                                bool flag6 = training_kf != null;
+
+                                if (flag6)
                                 {
-                                    bool flag8 = !SharedData.Instance(false).skillLevelupObjList.Contains(__instance);
-                                    if (flag8)
+                                    training_kf.newlv = training_kf.lv;
+                                    bool flag7 = training_kf.lv < int.Parse(training_kf.kf.LV) && training_kf.CheckLevelUp((float)__instance.m_FinalAddExp, __instance.charadata.GetFieldValueByName("WIL"), learn, __instance);
+
+                                    if (flag7)
                                     {
-                                        SharedData.Instance(false).skillLevelupObjList.Add(__instance);
+                                        bool flag8 = !SharedData.Instance(false).skillLevelupObjList.Contains(__instance);
+
+                                        if (flag8)
+                                        {
+                                            SharedData.Instance(false).skillLevelupObjList.Add(__instance);
+                                        }
+
+                                        __instance.charadata.m_LevelUpSkillId = __instance.charadata.m_Training_Id;
+                                        __instance.m_BattleController.ShowLevelUpSkill();
+                                        __instance.SetBattleObjState(BattleObjectState.SkillLevelUp);
                                     }
-                                    __instance.charadata.m_LevelUpSkillId = __instance.charadata.m_Training_Id;
-                                    __instance.m_BattleController.ShowLevelUpSkill();
-                                    __instance.SetBattleObjState(BattleObjectState.SkillLevelUp);
+                                    else
+                                    {
+                                        SharedData.Instance(false).m_BattleController.LevelUpCheckProcess();
+                                    }
                                 }
                                 else
                                 {
@@ -622,17 +660,13 @@ namespace CheatMenu
                                 SharedData.Instance(false).m_BattleController.LevelUpCheckProcess();
                             }
                         }
-                        else
-                        {
-                            SharedData.Instance(false).m_BattleController.LevelUpCheckProcess();
-                        }
                     }
                 }
-                return false;
+                return false; // Block original method
             }
             else
             {
-                return true;
+                return true; // Allow original method
             }
         }
         /// <summary>
