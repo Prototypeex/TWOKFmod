@@ -569,10 +569,13 @@ namespace CheatMenu
         {
             if(oneHitWugongMax)
             {
-                bool flag = __instance.m_SkillRow.lv < int.Parse(__instance.m_SkillRow.kf.LV) && (float)__instance.m_SkillRow.lv < __instance.charadata.GetFieldValueByName("WIL");
+                int currentlv = __instance.m_SkillRow.lv;
+                string maxlv = __instance.m_SkillRow.kf.LV;
+                float wil = __instance.charadata.GetFieldValueByName("WIL");
+                bool flag = currentlv < int.Parse(maxlv) && (float)currentlv < wil;
                 if (flag)
                 {
-                    __instance.m_SkillRow.newlv = float.Parse(__instance.m_SkillRow.kf.LV) > __instance.charadata.GetFieldValueByName("WIL") ? (int)__instance.charadata.GetFieldValueByName("WIL") : int.Parse(__instance.m_SkillRow.kf.LV);
+                    __instance.m_SkillRow.newlv = float.Parse(maxlv) > wil ? (int)wil : int.Parse(maxlv);
                     __instance.m_SkillRow.CheckAppendTraits(__instance);
                     bool flag3 = !SharedData.Instance(false).skillLevelupObjList.Contains(__instance);
                     if (flag3)
