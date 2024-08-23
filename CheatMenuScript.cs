@@ -21,6 +21,7 @@ namespace CheatMenu
         ConfigEntry<float> configFloat1;
         ConfigEntry<string> configString;
         public static bool preventItemReduction;
+        public static bool oneHitWugongMax;
         public static int extraExpValue=0;
         public static List<gang_b07Table.Row> b07 { get; private set; }//物品表
         public static List<gang_b06Table.Row> b06 { get; private set; }//特征表
@@ -96,7 +97,7 @@ namespace CheatMenu
         /// <summary>
         /// 菜单内的显示内容，所有的修改内容均在这里展示
         /// GUI显示经验：不能嵌套GUILayout，必须在第一层显示。
-        /// 通过交互来显示的元素，则先定义存储变量的数据结构，在GUI中获取，然后在第一层GUI中获取这些数据并显示
+        /// 通过交互来显示的元素，则先定义存储变量的数据结构，在GUI中获取，然后在第一层GUI中获取这些数据并显示(具体来说，显示的代码一直在刷新，获取数据的操作交给玩家来手动)
         /// 其原理是GUI是不断刷新的，所以不能嵌套。但是数据是可以固定的，GUI获取的是当前的数据，而数据更新后GUI跟着更新
         /// </summary>
         /// <param name="id"></param>
@@ -328,6 +329,7 @@ namespace CheatMenu
                     GUILayout.EndHorizontal();
 
                     preventItemReduction = GUILayout.Toggle(preventItemReduction,"在场景/战斗中使用物品，则物品不减少");
+                    oneHitWugongMax = GUILayout.Toggle(oneHitWugongMax,"出招一次，武功升级到上限（受武功上限和定力约束）");
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("战斗中出招获得额外武功熟练度点数：");
                     input = GUILayout.TextField(input);
@@ -558,6 +560,82 @@ namespace CheatMenu
                 //Debug.LogError("增加经验失败，方法条件错误或攻击者非友方");
             }
         }
+        /// <summary>
+        /// 出招武功满级，注入并用oneHitWugongMax控制是否替换原武功升级检查的方法
+        /// </summary>
+        /// <param name="__instance"></param>
+        [HarmonyPrefix,HarmonyPatch(typeof(BattleObject), "SkillLevelUpCheckProcess")]
+        public static bool BattleObject_SkillLevelUpCheckProcess_Patch(BattleObject __instance)
+        {
+            if(oneHitWugongMax)
+            {
+                bool flag = __instance.m_SkillRow.lv < int.Parse(__instance.m_SkillRow.kf.LV) && (float)__instance.m_SkillRow.lv < __instance.charadata.GetFieldValueByName("WIL");
+                if (flag)
+                {
+                    __instance.m_SkillRow.newlv = float.Parse(__instance.m_SkillRow.kf.LV) > __instance.charadata.GetFieldValueByName("WIL") ? (int)__instance.charadata.GetFieldValueByName("WIL") : int.Parse(__instance.m_SkillRow.kf.LV);
+                    __instance.m_SkillRow.CheckAppendTraits(__instance);
+                    bool flag3 = !SharedData.Instance(false).skillLevelupObjList.Contains(__instance);
+                    if (flag3)
+                    {
+                        SharedData.Instance(false).skillLevelupObjList.Add(__instance);
+                    }
+                    __instance.charadata.m_LevelUpSkillId = __instance.m_SkillRow.kf.ID;
+                    __instance.m_BattleController.ShowLevelUpSkill();
+                    __instance.SetBattleObjState(BattleObjectState.SkillLevelUpNeet);
+                }
+                else
+                {
+                    bool flag4 = __instance.m_FinalAddExp > 0;
+                    if (flag4)
+                    {
+                        bool flag5 = !"".Equals(__instance.charadata.m_Training_Id);
+                        if (flag5)
+                        {
+                            KongFuData training_kf = __instance.charadata.GetKongFuByID(__instance.charadata.m_Training_Id);
+                            float learn = __instance.charadata.GetFieldValueByName("LER");
+                            bool flag6 = training_kf != null;
+                            if (flag6)
+                            {
+                                training_kf.newlv = training_kf.lv;
+                                bool flag7 = training_kf.lv < int.Parse(training_kf.kf.LV) && training_kf.CheckLevelUp((float)__instance.m_FinalAddExp, __instance.charadata.GetFieldValueByName("WIL"), learn, __instance);
+                                if (flag7)
+                                {
+                                    bool flag8 = !SharedData.Instance(false).skillLevelupObjList.Contains(__instance);
+                                    if (flag8)
+                                    {
+                                        SharedData.Instance(false).skillLevelupObjList.Add(__instance);
+                                    }
+                                    __instance.charadata.m_LevelUpSkillId = __instance.charadata.m_Training_Id;
+                                    __instance.m_BattleController.ShowLevelUpSkill();
+                                    __instance.SetBattleObjState(BattleObjectState.SkillLevelUp);
+                                }
+                                else
+                                {
+                                    SharedData.Instance(false).m_BattleController.LevelUpCheckProcess();
+                                }
+                            }
+                            else
+                            {
+                                SharedData.Instance(false).m_BattleController.LevelUpCheckProcess();
+                            }
+                        }
+                        else
+                        {
+                            SharedData.Instance(false).m_BattleController.LevelUpCheckProcess();
+                        }
+                    }
+                }
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+        /// <summary>
+        /// 战斗中使用物品不减少
+        /// </summary>
+        /// <param name="__instance"></param>
         [HarmonyPrefix,HarmonyPatch(typeof(BattleObject), "State_Complete")]
         public static void BattleObject_State_Complete_Patch(BattleObject __instance)
         {
