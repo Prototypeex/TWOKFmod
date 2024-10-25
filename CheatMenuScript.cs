@@ -601,7 +601,7 @@ namespace CheatMenu
                     if (flag2)
                     {
                         __instance.m_SkillRow.newlv = float.Parse(maxlv) > wil ? (int)wil : int.Parse(maxlv);
-                        __instance.m_SkillRow.CheckAppendTraits(__instance);
+                        __instance.m_SkillRow.CheckAppendTraits(__instance.charadata);
                         bool flag3 = !SharedData.Instance(false).skillLevelupObjList.Contains(__instance);
 
                         if (flag3)
@@ -630,7 +630,7 @@ namespace CheatMenu
                                 if (flag6)
                                 {
                                     training_kf.newlv = training_kf.lv;
-                                    bool flag7 = training_kf.lv < int.Parse(training_kf.kf.LV) && training_kf.CheckLevelUp((float)__instance.m_FinalAddExp, __instance.charadata.GetFieldValueByName("WIL"), learn, __instance);
+                                    bool flag7 = training_kf.lv < int.Parse(training_kf.kf.LV) && training_kf.CheckLevelUp((float)__instance.m_FinalAddExp, __instance.charadata.GetFieldValueByName("WIL"), learn, __instance.charadata);
 
                                     if (flag7)
                                     {
