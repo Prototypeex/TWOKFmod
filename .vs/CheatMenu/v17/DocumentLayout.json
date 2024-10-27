@@ -5,6 +5,10 @@
     {
       "AbsoluteMoniker": "D:0:0:{72221EB1-5566-4C24-8A4A-9D44ADB9D0AB}|CheatMenu.csproj|d:\\visualstudioproject\\twokfmod\\cheatmenuscript.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{72221EB1-5566-4C24-8A4A-9D44ADB9D0AB}|CheatMenu.csproj|solutionrelative:cheatmenuscript.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{72221EB1-5566-4C24-8A4A-9D44ADB9D0AB}|CheatMenu.csproj|d:\\visualstudioproject\\twokfmod\\uguicheatmenu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{72221EB1-5566-4C24-8A4A-9D44ADB9D0AB}|CheatMenu.csproj|solutionrelative:uguicheatmenu.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -13,7 +17,7 @@
       "VerticalTabListWidth": 256,
       "DocumentGroups": [
         {
-          "DockedWidth": 200,
+          "DockedWidth": 335,
           "SelectedChildIndex": 0,
           "Children": [
             {
@@ -24,9 +28,28 @@
               "RelativeDocumentMoniker": "CheatMenuScript.cs",
               "ToolTip": "D:\\VisualStudioProject\\TWOKFmod\\CheatMenuScript.cs",
               "RelativeToolTip": "CheatMenuScript.cs",
-              "ViewState": "AQIAAMQAAAAAAAAAAAAAAMcBAAAjAAAA",
+              "ViewState": "AQIAABkCAAAAAAAAAAAAACcCAAAJAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-08-16T12:53:27.556Z",
+              "EditorCaption": ""
+            }
+          ]
+        },
+        {
+          "DockedWidth": 65,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "UGUICheatMenu.cs",
+              "DocumentMoniker": "D:\\VisualStudioProject\\TWOKFmod\\UGUICheatMenu.cs",
+              "RelativeDocumentMoniker": "UGUICheatMenu.cs",
+              "ToolTip": "D:\\VisualStudioProject\\TWOKFmod\\UGUICheatMenu.cs",
+              "RelativeToolTip": "UGUICheatMenu.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAkAAAAXAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-10-26T01:52:34.014Z",
               "EditorCaption": ""
             }
           ]

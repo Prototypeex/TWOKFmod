@@ -21,6 +21,7 @@ namespace CheatMenu
         ConfigEntry<float> configFloat1;
         ConfigEntry<string> configString;
         public static bool preventItemReduction;
+        public static bool modifyLevelLimit;
         public static bool oneHitWugongMax;
         public static int extraExpValue=0;
         public static List<gang_b07Table.Row> b07 { get; private set; }//物品表
@@ -330,6 +331,7 @@ namespace CheatMenu
 
                     preventItemReduction = GUILayout.Toggle(preventItemReduction,"在场景/战斗中使用物品，则物品不减少");
                     oneHitWugongMax = GUILayout.Toggle(oneHitWugongMax,"出招一次，武功升级到上限（受武功上限和定力约束）");
+                    modifyLevelLimit= GUILayout.Toggle(modifyLevelLimit,"修改自创武功等级上限为30，星级上限为8(不设为10怕超出上限报错)");
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("战斗中出招获得额外武功熟练度点数：");
                     input = GUILayout.TextField(input);
@@ -494,7 +496,6 @@ namespace CheatMenu
                     Debug.LogWarning("输入无效，请输入一个有效的数字。");
                 }
             }
-
             GUILayout.Space(10);
             if (GUILayout.Button("-"))
             {
@@ -542,6 +543,18 @@ namespace CheatMenu
                 Debug.LogError("SelectedPackageItem字段无法获取");
             }
         }
+        /// <summary>
+        /// 设置自创武功等级上限为30
+        /// </summary>
+        /// <param name="__instance"></param>
+        [HarmonyPostfix, HarmonyPatch(typeof(CreateWGController), "Start")]
+        public static void ModifyWGLimit(CreateWGController __instance)
+        {
+            Traverse traverse = Traverse.Create(__instance);
+            traverse.Field("levelLimit").SetValue(modifyLevelLimit ? 30 : 9);
+            traverse.Field("starsLimit").SetValue(modifyLevelLimit ? 8 : 6);
+        }
+
         /// <summary>
         /// 出招增加额外经验
         /// </summary>
