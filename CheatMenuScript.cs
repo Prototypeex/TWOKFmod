@@ -10,6 +10,7 @@ using BepInEx.Configuration;
 using HarmonyLib;
 using System.Reflection;
 using UnityEngine.UI;
+using System.Globalization;
 
 namespace CheatMenu
 {
@@ -34,8 +35,6 @@ namespace CheatMenu
         private string searchText = "";
         private static string input = "0";
         private Vector2 scrollPosition = Vector2.zero;
-        private string teststring;
-        private bool testBool = false;
         private string[] testToolbarNames = new string[] { "属性", "物品","特征","其他" };
         private int testToolbarIndex = 0;
         private float testFloat;
@@ -53,6 +52,7 @@ namespace CheatMenu
             Harmony.CreateAndPatchAll(typeof(CheatMenu));//Harmony注入，用于即时性修改游戏内方法调用逻辑
             Harmony.CreateAndPatchAll(typeof(MapHighLight));
             Harmony.CreateAndPatchAll(typeof(DisplayTraitChains));
+            Harmony.CreateAndPatchAll(typeof(StealPatch));
             Logger.LogInfo("CheatMenu初始化成功");
 
         }
@@ -932,6 +932,87 @@ namespace CheatMenu
         }
     }
 
+    public static class StealPatch
+    {
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(SkillTraitEquipManager), "RunSkill")]
+        public static void SkillTraitEquipManager_RunSkill_Prefix(BattleObject _attacker, BattleObject _defender)
+        {
+            if (_attacker.race != "player" || _defender.race == "player")
+            {
+                return;
+            }
+            Dictionary<string, int> dictionary = new Dictionary<string, int>();
+            for (int i = 0; i < _defender.m_StealableItemsName.Count; i++)
+            {
+                if (_defender.m_StealableItemsNum[i] != 0)
+                {
+                    string item = _defender.m_StealableItemsName[i].Item;
+                    int num = _defender.m_StealableItemsNum[i];
+                    SharedData.Instance(false).PackageAdd(item, num);
+                    if (dictionary.ContainsKey(item))
+                    {
+                        Dictionary<string, int> dictionary2 = dictionary;
+                        string key = item;
+                        dictionary2[key] += num;
+                    }
+                    else
+                    {
+                        dictionary.Add(item, num);
+                    }
+                    _defender.m_StealableItemsNum[i] = 0;
+                }
+            }
+            string str = _attacker.charadata.Indexs_Name["Name"].stringValue + " " + CommonFunc.I18nGetLocalizedValue("I18N_StalSuccess");
+            List<string> list = new List<string>();
+            string text = string.Empty;
+            foreach (KeyValuePair<string, int> keyValuePair in dictionary)
+            {
+                gang_b07Table.Row row = CommonResourcesData.b07.Find_ID(keyValuePair.Key);
+                if (row != null)
+                {
+                    list.Add(string.Format("<color=#f0e352>{0}</color> * {1}", row.Name_Trans, keyValuePair.Value));
+                    text = row.BookIcon;
+                }
+            }
+            if (list.Count > 0)
+            {
+                string text2 = str + " " + string.Join(", ", list) + "！";
+                _attacker.m_MenuController.OpenInteruptInfo(_attacker, text2, text);
+                _attacker.InteruptIn(BattleObjectState.ActionOver);
+            }
+        }
+    }
+    public static class SpecialEnemyPatch
+    {
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(gang_b04RandomFightInfos), "Load")]
+        public static void gang_b04RandomFightInfos_Load_Postfix(gang_b04RandomFightInfos __instance, TextAsset csv)
+        {
+            foreach (gang_b04RandomFightInfos.Row row in __instance.GetFieldValue<List<gang_b04RandomFightInfos.Row>>("rowList"))
+            {
+                if (!(row.Unique == "0"))
+                {
+                    row.RequireStep = "0";
+                    row.BattleRate = (row.BattleRate.ToFloat() * 10f).ToString();
+                }
+            }
+        }
+
+        public static float ToFloat(this string str)
+        {
+            float result;
+            if (!float.TryParse(str, NumberStyles.Float, CultureInfo.InvariantCulture, out result))
+            {
+                Debug.LogErrorFormat("Could not convert '{0}' to float.", new object[]
+                {
+                    str
+                });
+            }
+            return result;
+        }
+    }
+
     public static class ReflectionExtensions
     {
         public static T GetFieldValue<T>(this object instance, string fieldname)
@@ -952,4 +1033,6 @@ namespace CheatMenu
 
 
     }
+
+
 }
