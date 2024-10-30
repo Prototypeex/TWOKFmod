@@ -50,6 +50,7 @@ namespace CheatMenu
             hotkey1 = Config.Bind<KeyCode>("config","hotkey1",KeyCode.T,"测试修改功能的快捷键，无需理会");
             Logger.LogInfo("CheatMenu初始化中...");
             Harmony.CreateAndPatchAll(typeof(CheatMenu));//Harmony注入，用于即时性修改游戏内方法调用逻辑
+            Harmony.CreateAndPatchAll(typeof(MapHighLight));
             Logger.LogInfo("CheatMenu初始化成功");
 
         }
@@ -714,5 +715,76 @@ namespace CheatMenu
                 }
             }
         }
+    }
+    public static class MapHighLight
+    {
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(MapController), "Start")]
+        public static void MapController_Start_Postfix(MapController __instance)
+        {
+            foreach (MapController.Event @event in __instance.GetFieldValue<Dictionary<string,MapController.Event>>("events").Values)
+            {
+                if (!(@event.obj == null))
+                {
+                    gang_e01Table.Row evdata = @event.evdata;
+                    string[] array;
+                    if (evdata == null)
+                    {
+                        array = null;
+                    }
+                    else
+                    {
+                        string action = evdata.action;
+                        array = ((action != null) ? action.Split(new char[]
+                        {
+                            '|'
+                        }) : null);
+                    }
+                    string[] array2 = array;
+                    if (array2 != null && array2[0] == "GET" && @event.evdata.display == "Prefabs/Field/Dummy")
+                    {
+                        @event.evdata.display = "Prefabs/Effect/GroundLight";
+                    }
+                }
+            }
+        }
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(gang_e01Table), "Load")]
+        public static void gang_e01TableLoadPatch(gang_e01Table __instance, TextAsset csv)
+        {
+            List<gang_e01Table.Row> fieldValue = __instance.GetFieldValue<List<gang_e01Table.Row>>("rowList");
+            for (int i = 0; i < fieldValue.Count; i++)
+            {
+                string[] array = fieldValue[i].action.Split(new char[]
+                {
+            '|'
+                });
+                if (fieldValue[i].trigger == "CLICK" && array[0] == "GET" && fieldValue[i].display == "Prefabs/Field/Dummy")
+                {
+                    fieldValue[i].display = "Prefabs/Effect/GroundLight";
+                }
+            }
+        }
+    }
+
+    public static class ReflectionExtensions
+    {
+        public static T GetFieldValue<T>(this object instance, string fieldname)
+        {
+            T result;
+            try
+            {
+                FieldInfo fieldInfo = AccessTools.Field(instance.GetType(), fieldname);
+                result = (T)((object)((fieldInfo != null) ? fieldInfo.GetValue(instance) : null));
+            }
+            catch (Exception arg)
+            {
+                
+                result = default(T);
+            }
+            return result;
+        }
+
+
     }
 }

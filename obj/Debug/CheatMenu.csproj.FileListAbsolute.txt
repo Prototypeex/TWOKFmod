@@ -10,3 +10,7 @@ D:\VisualStudioProject\TWOKFmod\obj\Debug\CheatMenu.csproj.AssemblyReference.cac
 D:\VisualStudioProject\TWOKFmod\obj\Debug\CheatMenu.csproj.CoreCompileInputs.cache
 D:\VisualStudioProject\TWOKFmod\obj\Debug\CheatMenu.dll
 D:\VisualStudioProject\TWOKFmod\obj\Debug\CheatMenu.pdb
+D:\UnityProject\TWOKFmod\obj\Debug\CheatMenu.csproj.AssemblyReference.cache
+D:\UnityProject\TWOKFmod\obj\Debug\CheatMenu.csproj.CoreCompileInputs.cache
+D:\UnityProject\TWOKFmod\obj\Debug\CheatMenu.dll
+D:\UnityProject\TWOKFmod\obj\Debug\CheatMenu.pdb
