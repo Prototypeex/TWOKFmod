@@ -9,6 +9,7 @@ using UnityEngine;
 using BepInEx.Configuration;
 using HarmonyLib;
 using System.Reflection;
+using UnityEngine.UI;
 
 namespace CheatMenu
 {
@@ -17,9 +18,9 @@ namespace CheatMenu
     {
         ConfigEntry<KeyCode> hotkey;//这个定义+下面的Config.Bind就可以在启动后生成配置文件，进而在配置中手动修改快捷键
         ConfigEntry<KeyCode> hotkey1;
-        ConfigEntry<float> configFloat;
-        ConfigEntry<float> configFloat1;
-        ConfigEntry<string> configString;
+        //ConfigEntry<float> configFloat;//修改数值
+        //ConfigEntry<float> configFloat1;
+        //ConfigEntry<string> configString;
         public static bool preventItemReduction;
         public static bool modifyLevelLimit;
         public static bool oneHitWugongMax;
@@ -51,6 +52,7 @@ namespace CheatMenu
             Logger.LogInfo("CheatMenu初始化中...");
             Harmony.CreateAndPatchAll(typeof(CheatMenu));//Harmony注入，用于即时性修改游戏内方法调用逻辑
             Harmony.CreateAndPatchAll(typeof(MapHighLight));
+            Harmony.CreateAndPatchAll(typeof(DisplayTraitChains));
             Logger.LogInfo("CheatMenu初始化成功");
 
         }
@@ -764,6 +766,169 @@ namespace CheatMenu
                     fieldValue[i].display = "Prefabs/Effect/GroundLight";
                 }
             }
+        }
+    }
+
+    public static class DisplayTraitChains
+    {
+        private static readonly Dictionary<string, List<gang_b06ChainTable.Row>> _chainsCache = new Dictionary<string, List<gang_b06ChainTable.Row>>();
+        private static readonly Dictionary<string, List<string>> _hintStringsCache = new Dictionary<string, List<string>>();
+        public static List<string> ConvertChainsToHintStrings(string traitId, List<gang_b06ChainTable.Row> chains)
+        {
+            if (DisplayTraitChains._hintStringsCache.ContainsKey(traitId))
+            {
+                return DisplayTraitChains._hintStringsCache[traitId];
+            }
+            List<string> list = new List<string>();
+            foreach (gang_b06ChainTable.Row row in chains)
+            {
+                StringBuilder stringBuilder = new StringBuilder();
+                for (int i = 1; i < 10; i++)
+                {
+                    string text = row.nineGridDict[i.ToString()];
+                    if (!text.Equals("0") && !text.Split(new char[]
+                    {
+                '|'
+                    }).Contains(traitId))
+                    {
+                        string conditionNameHint = DisplayTraitChains.GetConditionNameHint(text);
+                        stringBuilder.Append(DisplayTraitChains.GetChineseNumeral(i) + ": " + conditionNameHint + " + ");
+                    }
+                }
+                if (stringBuilder.Length > 0)
+                {
+                    string item = "【" + row.name + "】：" + stringBuilder.ToString().TrimEnd(new char[]
+                    {
+                ' ',
+                '+'
+                    });
+                    list.Add(item);
+                }
+            }
+            DisplayTraitChains._hintStringsCache[traitId] = list;
+            return list;
+        }
+        public static List<gang_b06ChainTable.Row> FindChainsContainingTrait(string traitId)
+        {
+            if (DisplayTraitChains._chainsCache.ContainsKey(traitId))
+            {
+                return DisplayTraitChains._chainsCache[traitId];
+            }
+            List<gang_b06ChainTable.Row> list = new List<gang_b06ChainTable.Row>();
+            foreach (gang_b06ChainTable.Row row in CommonResourcesData.b06Chain.GetRowList())
+            {
+                for (int i = 1; i < 10; i++)
+                {
+                    if (row.nineGridDict[i.ToString()].Split(new char[]
+                    {
+                '|'
+                    }).Contains(traitId))
+                    {
+                        list.Add(row);
+                        break;
+                    }
+                }
+            }
+            DisplayTraitChains._chainsCache[traitId] = list;
+            return list;
+        }
+        private static string GetChineseNumeral(int number)
+        {
+            switch (number)
+            {
+                case 1:
+                    return "一";
+                case 2:
+                    return "二";
+                case 3:
+                    return "三";
+                case 4:
+                    return "四";
+                case 5:
+                    return "五";
+                case 6:
+                    return "六";
+                case 7:
+                    return "七";
+                case 8:
+                    return "八";
+                case 9:
+                    return "九";
+                default:
+                    return number.ToString();
+            }
+        }
+        private static string GetConditionNameHint(string condition)
+        {
+            if (condition == "Any")
+            {
+                return "任意特性";
+            }
+            if (condition == "NAN")
+            {
+                return "无特性";
+            }
+            List<string> values = (from id in condition.Split(new char[]
+            {
+        '|'
+            })
+                                   select CommonResourcesData.b06.Find_id(id).name_Trans).ToList<string>();
+            return string.Join(" | ", values);
+        }
+        public static List<string> GetMissingTraitHintsForTraitId(string traitId)
+        {
+            if (DisplayTraitChains._hintStringsCache.ContainsKey(traitId))
+            {
+                return DisplayTraitChains._hintStringsCache[traitId];
+            }
+            List<gang_b06ChainTable.Row> chains = DisplayTraitChains.FindChainsContainingTrait(traitId);
+            List<string> list = DisplayTraitChains.ConvertChainsToHintStrings(traitId, chains);
+            DisplayTraitChains._hintStringsCache[traitId] = list;
+            return list;
+        }
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(TraitPackageController), "RefreshTraitInfo")]
+        public static void TraitPackageController_RefreshTraitInfo_Postfix(TraitPackageController __instance, GameObject traitIcon)
+        {
+            Transform fieldValue = __instance.GetFieldValue<Transform>("TraitInfo");
+            Text text;
+            if (fieldValue == null)
+            {
+                text = null;
+            }
+            else
+            {
+                Transform transform = fieldValue.Find("TraitInfo/Info");
+                text = ((transform != null) ? transform.GetComponent<Text>() : null);
+            }
+            Text text2 = text;
+            TraitIconController componentInParent = traitIcon.GetComponentInParent<TraitIconController>();
+            string text3;
+            if (componentInParent == null)
+            {
+                text3 = null;
+            }
+            else
+            {
+                TraitItemData traitItemData = componentInParent.traitItemData;
+                if (traitItemData == null)
+                {
+                    text3 = null;
+                }
+                else
+                {
+                    gang_b06Table.Row b06Row = traitItemData.b06Row;
+                    text3 = ((b06Row != null) ? b06Row.id : null);
+                }
+            }
+            string text4 = text3;
+            if (text2 == null || text4 == null)
+            {
+                return;
+            }
+            List<string> missingTraitHintsForTraitId = DisplayTraitChains.GetMissingTraitHintsForTraitId(text4);
+            Text text5 = text2;
+            text5.text = text5.text + "\n<size=16>" + string.Join("\n", missingTraitHintsForTraitId) + "</size>";
         }
     }
 
