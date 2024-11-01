@@ -53,6 +53,7 @@ namespace CheatMenu
             Harmony.CreateAndPatchAll(typeof(MapHighLight));
             Harmony.CreateAndPatchAll(typeof(DisplayTraitChains));
             Harmony.CreateAndPatchAll(typeof(StealPatch));
+            Harmony.CreateAndPatchAll(typeof(SpecialEnemyPatch));
             Logger.LogInfo("CheatMenu初始化成功");
 
         }
@@ -352,7 +353,7 @@ namespace CheatMenu
                         }
                     }
                     GUILayout.EndHorizontal();
-                    GUILayout.Label("武功列表,遗忘武功无法消除增加的属性");
+                    GUILayout.Label("武功列表,方便快速遗忘武功");
                     scrollPosition = GUILayout.BeginScrollView(scrollPosition, GUILayout.Width(400), GUILayout.Height(400));
                     var kongfuListCopy = charaData.m_KongFuList.ToList(); // 创建集合的副本
                     foreach (var kongfu in kongfuListCopy)
